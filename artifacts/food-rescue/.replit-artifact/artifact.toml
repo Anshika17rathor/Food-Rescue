@@ -1,0 +1,28 @@
+kind = "web"
+previewPath = "/"
+title = "FoodRescue"
+description = "A food-rescue platform connecting restaurants with verified charitable organizations to redirect surplus meals to people before they become waste."
+version = "1.0.0"
+id = "artifacts/food-rescue"
+router = "path"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 19252
+
+[services.development]
+run = "pnpm --filter @workspace/food-rescue run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/food-rescue", "run", "build" ]
+serve = "static"
+publicDir = "artifacts/food-rescue/dist/public"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "19252"
+BASE_PATH = "/"

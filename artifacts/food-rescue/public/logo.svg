@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 40" role="img" aria-labelledby="title">
+  <title id="title">foodrescue</title>
+  <rect width="40" height="40" rx="11" fill="#e7b94e"/>
+  <path d="M20 29c-6-3-9-8-7-14 4 0 7 2 8 5 1-5 4-8 9-9 1 7-2 13-10 18Z" fill="#254f43"/>
+  <text x="50" y="27" font-family="Manrope,Arial,sans-serif" font-size="21" font-weight="800" fill="#254f43">food<tspan fill="#e7b94e">rescue</tspan></text>
+</svg>

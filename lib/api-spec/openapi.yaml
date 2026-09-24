@@ -1,0 +1,436 @@
+openapi: 3.1.0
+info:
+  title: Api
+  version: 0.1.0
+  description: FoodRescue donation and impact API
+servers:
+  - url: /api
+    description: Base API path
+tags:
+  - name: health
+  - name: auth
+  - name: donations
+  - name: dashboard
+  - name: notifications
+  - name: organizations
+paths:
+  /healthz:
+    get:
+      operationId: healthCheck
+      tags: [health]
+      summary: Health check
+      responses:
+        "200":
+          description: Healthy
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthStatus"
+  /auth/demo-login:
+    post:
+      operationId: demoLogin
+      tags: [auth]
+      summary: Sign in with a demo account
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DemoLoginInput"
+      responses:
+        "200":
+          description: Signed in
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthSession"
+  /auth/me:
+    get:
+      operationId: getCurrentUser
+      tags: [auth]
+      summary: Get the current demo user
+      responses:
+        "200":
+          description: Current user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+  /donations:
+    get:
+      operationId: listDonations
+      tags: [donations]
+      summary: List donations
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: string
+        - name: search
+          in: query
+          schema:
+            type: string
+        - name: foodType
+          in: query
+          schema:
+            type: string
+        - name: category
+          in: query
+          schema:
+            type: string
+        - name: urgent
+          in: query
+          schema:
+            type: boolean
+      responses:
+        "200":
+          description: Donation list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Donation"
+    post:
+      operationId: createDonation
+      tags: [donations]
+      summary: Post a surplus food donation
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DonationInput"
+      responses:
+        "201":
+          description: Donation created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Donation"
+  /donations/{id}:
+    get:
+      operationId: getDonation
+      tags: [donations]
+      summary: Get a donation
+      parameters:
+        - $ref: "#/components/parameters/Id"
+      responses:
+        "200":
+          description: Donation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Donation"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    patch:
+      operationId: updateDonation
+      tags: [donations]
+      summary: Update or cancel a donation
+      parameters:
+        - $ref: "#/components/parameters/Id"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DonationUpdate"
+      responses:
+        "200":
+          description: Updated donation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Donation"
+  /donations/{id}/claim:
+    post:
+      operationId: claimDonation
+      tags: [donations]
+      summary: Claim a donation for an organization
+      parameters:
+        - $ref: "#/components/parameters/Id"
+      responses:
+        "200":
+          description: Claimed donation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Donation"
+        "409":
+          $ref: "#/components/responses/Conflict"
+  /donations/{id}/status:
+    patch:
+      operationId: updateDonationStatus
+      tags: [donations]
+      summary: Move a donation through its handover lifecycle
+      parameters:
+        - $ref: "#/components/parameters/Id"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DonationStatusInput"
+      responses:
+        "200":
+          description: Donation with new status
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Donation"
+  /dashboard/summary:
+    get:
+      operationId: getDashboardSummary
+      tags: [dashboard]
+      summary: Get dashboard counters and impact metrics
+      responses:
+        "200":
+          description: Dashboard summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DashboardSummary"
+  /dashboard/activity:
+    get:
+      operationId: getRecentActivity
+      tags: [dashboard]
+      summary: Get recent rescue activity
+      responses:
+        "200":
+          description: Recent activity
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Activity"
+  /notifications:
+    get:
+      operationId: listNotifications
+      tags: [notifications]
+      responses:
+        "200":
+          description: Notifications for the current user
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Notification"
+  /notifications/{id}/read:
+    patch:
+      operationId: markNotificationRead
+      tags: [notifications]
+      parameters:
+        - $ref: "#/components/parameters/Id"
+      responses:
+        "200":
+          description: Updated notification
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Notification"
+  /organizations/nearby:
+    get:
+      operationId: listNearbyOrganizations
+      tags: [organizations]
+      responses:
+        "200":
+          description: Nearby verified organizations
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Organization"
+components:
+  parameters:
+    Id:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: string
+  responses:
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+    Conflict:
+      description: Conflict
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+  schemas:
+    HealthStatus:
+      type: object
+      required: [status]
+      properties:
+        status:
+          type: string
+    Error:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: string
+    User:
+      type: object
+      required: [id, name, email, role, organizationName]
+      properties:
+        id: { type: string }
+        name: { type: string }
+        email: { type: string }
+        role: { type: string, enum: [restaurant, organization, admin] }
+        organizationName: { type: string }
+        organizationType: { type: ["string", "null"] }
+        isVerified: { type: boolean }
+        location:
+          $ref: "#/components/schemas/Location"
+    DemoLoginInput:
+      type: object
+      required: [role]
+      properties:
+        role: { type: string, enum: [restaurant, organization, admin] }
+    AuthSession:
+      type: object
+      required: [token, user]
+      properties:
+        token: { type: string }
+        user:
+          $ref: "#/components/schemas/User"
+    Location:
+      type: object
+      required: [address, lat, lng]
+      properties:
+        address: { type: string }
+        lat: { type: number }
+        lng: { type: number }
+    Donation:
+      type: object
+      required:
+        - id
+        - foodName
+        - category
+        - quantity
+        - servings
+        - foodType
+        - preparationTime
+        - expiryTime
+        - pickupDeadline
+        - description
+        - status
+        - restaurantName
+        - restaurantId
+        - createdAt
+        - location
+        - distanceKm
+        - urgent
+      properties:
+        id: { type: string }
+        foodName: { type: string }
+        category: { type: string }
+        quantity: { type: string }
+        servings: { type: integer }
+        foodType: { type: string, enum: [VEG, NON_VEG, VEGAN] }
+        preparationTime: { type: string }
+        expiryTime: { type: string, format: date-time }
+        pickupDeadline: { type: string, format: date-time }
+        description: { type: string }
+        imageUrl: { type: ["string", "null"] }
+        status: { type: string, enum: [AVAILABLE, CLAIMED, PICKUP_PENDING, PICKED_UP, DELIVERED, COMPLETED, EXPIRED, CANCELLED] }
+        restaurantName: { type: string }
+        restaurantId: { type: string }
+        claimedByName: { type: ["string", "null"] }
+        createdAt: { type: string, format: date-time }
+        location:
+          $ref: "#/components/schemas/Location"
+        distanceKm: { type: number }
+        urgent: { type: boolean }
+    DonationInput:
+      type: object
+      required: [foodName, category, quantity, servings, foodType, preparationTime, expiryTime, pickupDeadline, description, address]
+      properties:
+        foodName: { type: string, minLength: 2 }
+        category: { type: string }
+        quantity: { type: string }
+        servings: { type: integer, minimum: 1 }
+        foodType: { type: string, enum: [VEG, NON_VEG, VEGAN] }
+        preparationTime: { type: string }
+        expiryTime: { type: string, format: date-time }
+        pickupDeadline: { type: string, format: date-time }
+        description: { type: string }
+        address: { type: string }
+        imageUrl: { type: ["string", "null"] }
+    DonationUpdate:
+      type: object
+      properties:
+        status: { type: string, enum: [CANCELLED] }
+        description: { type: string }
+    DonationStatusInput:
+      type: object
+      required: [status]
+      properties:
+        status: { type: string, enum: [PICKUP_PENDING, PICKED_UP, DELIVERED, COMPLETED, CANCELLED] }
+    Organization:
+      type: object
+      required: [id, name, type, address, peopleServed, distanceKm, isVerified, rating]
+      properties:
+        id: { type: string }
+        name: { type: string }
+        type: { type: string }
+        address: { type: string }
+        peopleServed: { type: integer }
+        distanceKm: { type: number }
+        isVerified: { type: boolean }
+        rating: { type: number }
+    DashboardSummary:
+      type: object
+      required: [totalDonations, activeDonations, completedDonations, foodRescuedKg, mealsServed, organizationsHelped, restaurantsParticipating, completionRate, monthlyDonations, monthlyImpact]
+      properties:
+        totalDonations: { type: integer }
+        activeDonations: { type: integer }
+        completedDonations: { type: integer }
+        foodRescuedKg: { type: number }
+        mealsServed: { type: integer }
+        organizationsHelped: { type: integer }
+        restaurantsParticipating: { type: integer }
+        completionRate: { type: number }
+        monthlyDonations:
+          type: array
+          items:
+            $ref: "#/components/schemas/MonthlyMetric"
+        monthlyImpact:
+          type: array
+          items:
+            $ref: "#/components/schemas/MonthlyMetric"
+    MonthlyMetric:
+      type: object
+      required: [month, value]
+      properties:
+        month: { type: string }
+        value: { type: number }
+    Activity:
+      type: object
+      required: [id, title, description, time, tone]
+      properties:
+        id: { type: string }
+        title: { type: string }
+        description: { type: string }
+        time: { type: string }
+        tone: { type: string, enum: [green, amber, blue, slate] }
+    Notification:
+      type: object
+      required: [id, title, message, type, isRead, createdAt]
+      properties:
+        id: { type: string }
+        title: { type: string }
+        message: { type: string }
+        type: { type: string }
+        isRead: { type: boolean }
+        relatedDonationId: { type: ["string", "null"] }
+        createdAt: { type: string, format: date-time }
